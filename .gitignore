@@ -1,0 +1,71 @@
+# flat files
+*.txt
+*.*sv
+
+
+# Office docs
+*.xls*
+*.doc*
+*.ppt*
+*.numbers
+*.pages
+*.key
+
+
+# archives
+*.tar*
+*.tgz
+*.zip
+*.bz2
+*.7z
+
+
+# sqlite, access, redis
+*.db
+*.mdb
+*.rdb
+
+
+# Python related....
+# iPython notebooks
+.ipynb_checkpoints/*
+# Python builds
+*.egg*
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib*
+*.pyc
+# Install logs
+pip-log.txt
+# unit test / coverage reports
+.coverage
+.tox
+nosetests.xml
+# Translations
+*.mo
+# PyDev (Eclipse)
+.project
+.pydevproject
+# PyCharm IDE
+.idea/*
+
+
+# Dev configs
+dev.yaml
+
+
+# C extensions
+*.so
+
+
+# misc
+*.asc
+.DS_Store
+*.swp
