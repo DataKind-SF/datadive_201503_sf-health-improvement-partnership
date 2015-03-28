@@ -55,6 +55,7 @@ data
 # Python related....
 # iPython notebooks
 .ipynb_checkpoints/*
+*/*.ipynb_checkpoints/*
 # Python builds
 *.egg*
 dist
