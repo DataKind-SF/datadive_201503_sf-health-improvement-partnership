@@ -9,6 +9,7 @@ if (getPackages){
     setRepositories(ind = c(1,6))
     install.packages('rgdal', depend=TRUE)
     install.packages("rgeos", depend=TRUE)
+    install.packages("stringr", depend=TRUE)
     install.packages('OpenStreetMap', type='source', depends=TRUE)
     install.packages('raster', depend=TRuE)
 }
@@ -17,6 +18,7 @@ library(maptools)
 library(plyr)
 library(spatstat)
 library(sp)
+library(stringr)
 library(rgdal)
 library(vegan) ## For Shannon diversity index
 ##library("OpenStreetMap")
@@ -60,15 +62,17 @@ SFNeighb <- spTransform(sfmaps[[4]],NAD83_Z4)
 ##SFzips <- spTransform(sfmaps[[5]],NAD83_Z4)
 ## Output file with onsale offsale outlets together in csv format.
 
-
-
-
 # Rbind these together, and write to file
 offSaleAlcLic_df <- data.frame(offSaleAlcLic)
 offSaleAlcLic_df$sale_site = "off"
 onSaleAlcLic_df <- data.frame(onSaleAlcLic)
 onSaleAlcLic_df$sale_site = "on"
 alcohol_licenses_locations <- rbind(onSaleAlcLic_df, offSaleAlcLic_df)
+
+# Change census tract values to just census tract number
+alcohol_licenses_locations$Census_tra <- str_extract(alcohol_licenses_locations$Census_tra, "[[:digit:]]+")
+
+# Write result to file
 write.csv(alcohol_licenses_locations, "Brondfield_ACS_alcohol_data/alcohol_licenses_locations.csv")
 
 ## Try spplot
