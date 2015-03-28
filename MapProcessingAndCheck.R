@@ -65,7 +65,9 @@ SFNeighb <- spTransform(sfmaps[[4]],NAD83_Z4)
 
 # Rbind these together, and write to file
 offSaleAlcLic_df <- data.frame(offSaleAlcLic)
+offSaleAlcLic_df$sale_site = "off"
 onSaleAlcLic_df <- data.frame(onSaleAlcLic)
+onSaleAlcLic_df$sale_site = "on"
 alcohol_licenses_locations <- rbind(onSaleAlcLic_df, offSaleAlcLic_df)
 write.csv(alcohol_licenses_locations, "Brondfield_ACS_alcohol_data/alcohol_licenses_locations.csv")
 
