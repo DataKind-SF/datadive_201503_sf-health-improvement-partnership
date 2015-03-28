@@ -1,3 +1,29 @@
+# History files
+.Rhistory
+.Rapp.history
+
+# Example code in package build process
+*-Ex.R
+
+# RStudio files
+.Rproj.user/
+
+# produced vignettes
+vignettes/*.html
+vignettes/*.pdf
+
+# Data folders
+data
+
+# Map files
+*.dbf
+*.prj
+*.sbn
+*.sbx
+*.shp
+*.xml
+*.shp
+
 # flat files
 *.txt
 *.*sv

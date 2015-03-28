@@ -1,3 +1,18 @@
+
+getPackeges <- FALSE
+if (getPackages){
+    install.packages('maptools', depend=TRUE)
+    install.packages('plyr')
+    install.packages('spatstat', depend=TRUE)
+    install.packages('sp', depend=TRUE)
+    install.packages('vegan', depend=TRUE)
+    setRepositories(ind = c(1,6))
+    install.packages('rgdal', depend=TRUE)
+    install.packages("rgeos", depend=TRUE)
+    install.packages('OpenStreetMap', type='source', depends=TRUE)
+    install.packages('raster', depend=TRuE)
+}
+
 library(maptools)
 library(plyr)
 library(spatstat)
@@ -6,6 +21,7 @@ library(rgdal)
 library(vegan) ## For Shannon diversity index
 ##library("OpenStreetMap")
 ##library("sparr")
+
 ## State plane coordinate symtems for California, zone 3 which includes Bay Area
 NAD83_Z4 <- CRS("+proj=lcc +lat_1=38.43333333333333 +lat_2=37.06666666666667 +lat_0=36.5 +lon_0=-120.5 +x_0=2000000 +y_0=500000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
 NAD83HARN_Z4 <- CRS("+proj=lcc +lat_1=38.43333333333333 +lat_2=37.06666666666667 +lat_0=36.5 +lon_0=-120.5 +x_0=2000000 +y_0=500000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
@@ -42,6 +58,10 @@ onSaleAlcLic <- spTransform(sfmaps[[2]][-j,],NAD83_Z4)
 SFCensTractACS <- spTransform(sfmaps[[3]],NAD83_Z4)
 SFNeighb <- spTransform(sfmaps[[4]],NAD83_Z4)
 ##SFzips <- spTransform(sfmaps[[5]],NAD83_Z4)
+## Output file with onsale offsale outlets together in csv format.
+
+
+
 
 ## Try spplot
 spplot(sfmaps[[3]], c("below_25k", "k25_50k", "k50_100k","over_100k"))
@@ -64,8 +84,9 @@ plot(sfmaps[[3]],add=T,col='white')
 ## Spatial join of licenses and census tracts, total count
 ## number of licenses, number of types and a diversity measure for license types(Shannon?)
 #aggre
-
-
+tt <- over(onSaleAlcLic,SFCensTractACS)$Tract2010
+## gets the tract numbers in the order of the points data.frame
+## but census tract is already there
 
 ## Demographic data
 ##demog <- read.csv("Brondfield_ACS_alcohol_data/ACS_11_5YR_SF_full_demographics.csv")
@@ -111,3 +132,18 @@ crimeDat_trans <- spTransform(crimeDatReduced,NAD83_Z4)
 ## I probably need to put the density calculation in the panel function.
 ## for spplot, what about ggmap?
 
+
+
+### Get the elevation data and schoos data
+
+SF_Schools <- readOGR("Other data_NJLK/San_Francisco_Public_Schools_-_Points",layer="schools_public_pt")
+SF_Schools_trns<-spTransform(SF_Schools,NAD83_Z4)
+plot(SFCensTractACS )
+plot(SF_Schools_trns,add=T)
+
+##SF_elev <- readOGR("Other data_NJLK/phys_contours_wgs",layer="phys_contours_wgs")
+
+sfnorth_elev <- raster("Other data_NJLK/Digelevation/sf_north.dem")
+sfsouth_elev <- raster("Other data_NJLK/Digelevation/sf_south.dem")
+sfsouthoe_elev <- raster("Other data_NJLK/Digelevation/sf_south_oe.dem")
+sfsouth_elev <- raster("Other data_NJLK/Digelevation/sf_south.dem")
