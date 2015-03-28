@@ -63,6 +63,12 @@ SFNeighb <- spTransform(sfmaps[[4]],NAD83_Z4)
 
 
 
+# Rbind these together, and write to file
+offSaleAlcLic_df <- data.frame(offSaleAlcLic)
+onSaleAlcLic_df <- data.frame(onSaleAlcLic)
+alcohol_licenses_locations <- rbind(onSaleAlcLic_df, offSaleAlcLic_df)
+write.csv(alcohol_licenses_locations, "Brondfield_ACS_alcohol_data/alcohol_licenses_locations.csv")
+
 ## Try spplot
 spplot(sfmaps[[3]], c("below_25k", "k25_50k", "k50_100k","over_100k"))
 ## Tenderloin and Bayview/Hunters point stand out, as low income areas
