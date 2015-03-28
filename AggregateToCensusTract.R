@@ -30,5 +30,5 @@ malcohol_table <- summarise(census_by_license, n_stores=n())
 alcohol_table <- dcast(malcohol_table, formula=License_Nu~Census_tra, value=n_stores)
 alcohol_table[is.na(alcohol_table)] <- 0
 
-write.csv(malcohol_table, file="counts_census_by_alcohol_license_melted.csv")
-write.csv(alcohol_table, file="counts_census_by_alcohol_license.csv")
+write.csv(malcohol_table, file="data/processed_data/counts_census_by_alcohol_license_melted.csv")
+write.csv(alcohol_table, file="data/processed_data/counts_census_by_alcohol_license.csv")
