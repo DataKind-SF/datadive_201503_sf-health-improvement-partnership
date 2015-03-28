@@ -1,5 +1,5 @@
 
-getPackeges <- FALSE
+getPackages <- FALSE
 if (getPackages){
     install.packages('maptools', depend=TRUE)
     install.packages('plyr')
