@@ -24,10 +24,10 @@ cat("\014")  # Clear console
 alcohol <- read.csv("data/processed_data/alcohol_licenses_locations.csv")
 alcohol <- data.table(alcohol)
 
-census_by_license <- group_by(alcohol, Census_tra, License_Nu)
+census_by_license <- group_by(alcohol, Census_tra, License_Ty)
 
 malcohol_table <- summarise(census_by_license, n_stores=n())
-alcohol_table <- dcast(malcohol_table, formula=License_Nu~Census_tra, value=n_stores)
+alcohol_table <- dcast(malcohol_table, formula=Census_tra~License_Ty, value=n_stores)
 alcohol_table[is.na(alcohol_table)] <- 0
 
 write.csv(malcohol_table, file="data/processed_data/counts_census_by_alcohol_license_melted.csv")
