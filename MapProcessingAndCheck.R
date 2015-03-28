@@ -70,10 +70,11 @@ onSaleAlcLic_df$sale_site = "on"
 alcohol_licenses_locations <- rbind(onSaleAlcLic_df, offSaleAlcLic_df)
 
 # Change census tract values to just census tract number
-alcohol_licenses_locations$Census_tra <- str_extract(alcohol_licenses_locations$Census_tra, "[[:digit:]]+")
+alcohol_licenses_locations$Census_tra <- gsub("[[:punct:]]", "", alcohol_licenses_locations$Census_tra)
+alcohol_licenses_locations$Census_tra <- str_extract(alcohol_licenses_locations$Census_tra, "[1-9][0-9]+")
 
 # Write result to file
-write.csv(alcohol_licenses_locations, "Brondfield_ACS_alcohol_data/alcohol_licenses_locations.csv")
+write.csv(alcohol_licenses_locations, "data/processed_data/alcohol_licenses_locations.csv")
 
 ## Try spplot
 spplot(sfmaps[[3]], c("below_25k", "k25_50k", "k50_100k","over_100k"))
