@@ -1,6 +1,15 @@
-# Load libraries
-library("data.table")
-library("dplyr")
+# Setup packages ---------------------------------------------------------------
+# List of packages for session
+.packages = c("data.table", 
+              "dplyr") 
+
+# Install CRAN packages (if not already installed)
+.inst <- .packages %in% installed.packages()
+if(length(.packages[!.inst]) > 0) install.packages(.packages[!.inst])
+
+# Load packages into session 
+lapply(.packages, require, character.only=TRUE)
+cat("\014")  # Clear console
 
 # Load data
 data_311 <- read.csv("data/raw_data/Map__Crime_Incidents_-_from_1_Jan_2003.csv")
