@@ -1,3 +1,6 @@
+# Data folders
+data
+
 # Map files
 *.dbf
 *.prj
