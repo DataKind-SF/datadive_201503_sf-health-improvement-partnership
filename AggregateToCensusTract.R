@@ -1,12 +1,26 @@
-library("plyr")
-library("data.table")
-library("dplyr")
-library("reshape2")
+#! /usr/bin/env Rscript
 
-################################################################################
-# Create a table of counts with census tracts as rows, license types as columns
-################################################################################
+# File description -------------------------------------------------------------
+# 
+#
 
+# Setup packages ---------------------------------------------------------------
+# List of packages for session
+.packages = c("plyr", 
+              "data.table", 
+              "dplyr",
+              "reshape2"
+              ) 
+
+# Install CRAN packages (if not already installed)
+.inst <- .packages %in% installed.packages()
+if(length(.packages[!.inst]) > 0) install.packages(.packages[!.inst])
+
+# Load packages into session 
+lapply(.packages, require, character.only=TRUE)
+cat("\014")  # Clear console
+
+# Create a table of counts with census tracts as rows, license types as columns ----
 alcohol <- read.csv("data/processed_data/alcohol_licenses_locations.csv")
 alcohol <- data.table(alcohol)
 
