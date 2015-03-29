@@ -55,44 +55,79 @@ date: "March 29, 2015"
 output: pdf_document
 ---
 
-# Introduction ---
+# Introduction
 
-- what this is: a collection of initial statistical insights from a data dive
-- Not a refined product, some lines of thought could be more developed, but wanted
-to share everything we thought of. 
-- Avoid math, focus on plots
+In this document, we collect the statistical approaches and insights from DataKind's 
+March 27-29, 2015 DataDive. While we highlight our most interesting findings, we
+also wanted to share alternative lines of thought we had developed but not completely
+refined, with the hope that this could guide future analysis.
 
-## Goals ---
+## Goals
 
-- Global patterns and local anomalies
-    + What is the general relationship between crime and liquor store levels?
-    + Are there positions that deviate from these local anamolies substantially?
-    + How can demographic information be integrated? Can we match?
-- Are there particularly bad types of liquor establishments?
-- What is the effect of different total sales volume within different tracts, 
-and within individual stores?
+There are two overall goals of interest in this analysis: Global patterns and local
+anomalies. On the one hand, we would like to summarise the relationships between
+the presence of liquor stores and crimes that will apply generally across
+San Francisco. On the other hand, we would like to highlight those locations
+which somehow seem to deviate from any general patterns. In both cases, we would
+like to integrate demographic information. For example, are there locations with
+similar demograhpics and numbers of liquor stores, but very different crime rates?
 
-## Approach --
+## Approach
 
-- The data:
-  + We use alcohol license information, census tract information, and crime information; haven't used 311 reported data
-- Aggregate data to census level, divide by total population
-  + Ignores store effects
-  + Ignores temporal effects
-  + Throw out tracts with fewer than 500 people, estimation too hard
-- Aggregation using License Type and Crime Category
-  + Could replicate analsis at different levels of granularity
-  + Coarser, and no real need to do dimension reduction, but perhaps less rich picture
-  + Finer, and the level of reduction would be more challenging: Working in higher
-  dimensional space.
-- Remainder is just dimension reduction followed by some sort of association
-  + Crudest dimension reduction is just summing counts
-  + Another crude dimension reduction is ignoring dimensions
-  + Once we cluster based on two sets of vars, see how the clusterings compare
-  + See how the distances compare
-  + Perform dimension reduction jointly
+### Data Available
 
-# Regression on Aggregated Counts ---
+We consider three primary sources of data:
+- Census information: Demographic information at the census tract level. This
+includes overall population, population breakdown across races, unemployment
+rate, and median income.
+- Crime data: We have crime reports (from the SFPD?), mapping the time and place
+of crimes within the city over the last 10 years. These crime reports also include
+descriptions of the type of crime at varying levels of granularity -- a report
+may be classified at a coarse level as robbery, and at a fine level as robbery
+at an ATM machine, for instance.
+- Alcohol license data: We have records of alcohol licenses over more than a decade.
+These licenses are required by any venue that sells or distributes alcohol, including
+bars, clubs, and convenience stores. These records include the location of these
+vendors, as well as a license type (bars and liquor stores require different 
+licenses, for example).
+
+### Data used
+
+We chose to aggregate the crime and alcohol license data to the census tract 
+level, and then normalize by census tract population. More specifically, we 
+(1) counted the number of venues using each of the 23 license types within each census
+tract, then divided by the population of that census tract and (2) counted
+the number of crimes within each of the 30 description groups. We could have
+used finer or coarser description types for both liquor vendors and 
+crimes, but this level seemed to offer a rich description without making the
+problem too high dimensional, and less tractable. Further, we discarded those tracts
+with fewer than 500 people living within them, since
+our estimates of the densities of crimes and liquor venues in such sparsely
+populated areas are less reliable. 
+
+Notice that, at this stage, we have ignored (1) any spatial information at a finer resolution than the census tract level and (2) any
+temporal effects. Nonetheless, we believe our methods could be generalized to handle
+these situations as well.
+
+### Methods
+
+For the first task, identifying global patterns, our overal methods use two
+steps: dimension reduction followed by some measure of association. By dimension
+reduction, we mean reducing many different measurements to just a few -- for example,
+the number of college educated people and the median income of a census tract can
+both be explained by an underlying "affluence" effect. By association, we mean
+taking these underlying factors and determining whether and how they are correlated.
+
+The specific tools we applied to do this reduction vary in complexity. From
+crudest to most (but still not very) sophisticated, we used
+ 
+-Crudest dimension reduction is just summing counts
+- Another crude dimension reduction is ignoring dimensions
+- Once we cluster based on two sets of vars, see how the clusterings compare
+- See how the distances compare
+- Perform dimension reduction jointly
+
+# Regression on Aggregated Counts
 
 - First, just summing counts of licenses
 - We need to compare rates

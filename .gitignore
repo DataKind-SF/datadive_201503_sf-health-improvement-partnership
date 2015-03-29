@@ -12,8 +12,9 @@
 vignettes/*.html
 vignettes/*.pdf
 
-# Data folders
-data
+## Data folders
+#data
+#processed_data
 
 # Map files
 *.dbf
