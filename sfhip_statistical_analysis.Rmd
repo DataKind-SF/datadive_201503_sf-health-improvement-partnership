@@ -1,0 +1,497 @@
+```{r load_packages, echo=FALSE}
+# Setup packages ---------------------------------------------------------------
+# List of packages for session
+.packages = c("plyr", 
+              "ggplot2",
+              "knitr",
+              "grid",
+              "data.table", 
+              "dplyr",
+              "vegan",
+              "reshape2"
+              ) 
+
+# Install CRAN packages (if not already installed)
+.inst <- .packages %in% installed.packages()
+if(length(.packages[!.inst]) > 0) install.packages(.packages[!.inst])
+
+# Load packages into session 
+suppressMessages(lapply(.packages, require, character.only=TRUE))
+cat("\014")  # Clear console
+```
+
+```{r, echo=FALSE}
+opts_knit$set(root.dir="~/datadive_201503_sf-health-improvement-partnership/")
+opts_chunk$set(fig.width=10, fig.height=5, dpi=120, warning=F, echo=F,
+               cache=T, message=F)
+```
+
+```{r theme}
+custom_theme <- function(text_size=10, legend_size=0.4, margin_size=0.01) {
+    # Custom ggplot theme
+    return (theme(axis.text.x=element_text(angle=-90, size=text_size),
+                  axis.text.y=element_text(size=text_size),
+                  strip.text.x=element_text(size=text_size),
+                  strip.text.y=element_text(size=text_size),
+                  strip.background=element_rect(fill="white", color="grey"),
+                  legend.key.size=unit(legend_size, "cm"),
+                  legend.title=element_text(size=text_size),
+                  legend.text=element_text(size=text_size),
+                  title=element_text(size=text_size + 1),
+                  panel.margin=unit(margin_size, "cm"),
+                  panel.background = element_rect(fill="white", color="grey"),
+                  panel.grid=element_line(colour="black"),
+                  axis.ticks.margin=unit(margin_size, "cm"),
+                  plot.margin=unit(rep(margin_size, 4), "cm"),
+                  legend.position="right",
+                  legend.margin=unit(margin_size, "cm")))
+}
+```
+
+---
+title: "SF-HIP Statistical Analysis"
+author: Kris, Terence, Chao, Ray, and Violet
+date: "March 29, 2015"
+output: pdf_document
+---
+
+# Introduction ---
+
+- what this is: a collection of initial statistical insights from a data dive
+- Not a refined product, some lines of thought could be more developed, but wanted
+to share everything we thought of. 
+- Avoid math, focus on plots
+
+## Goals ---
+
+- Global patterns and local anomalies
+    + What is the general relationship between crime and liquor store levels?
+    + Are there positions that deviate from these local anamolies substantially?
+    + How can demographic information be integrated? Can we match?
+- Are there particularly bad types of liquor establishments?
+- What is the effect of different total sales volume within different tracts, 
+and within individual stores?
+
+## Approach --
+
+- The data:
+  + We use alcohol license information, census tract information, and crime information; haven't used 311 reported data
+- Aggregate data to census level, divide by total population
+  + Ignores store effects
+  + Ignores temporal effects
+  + Throw out tracts with fewer than 500 people, estimation too hard
+- Aggregation using License Type and Crime Category
+  + Could replicate analsis at different levels of granularity
+  + Coarser, and no real need to do dimension reduction, but perhaps less rich picture
+  + Finer, and the level of reduction would be more challenging: Working in higher
+  dimensional space.
+- Remainder is just dimension reduction followed by some sort of association
+  + Crudest dimension reduction is just summing counts
+  + Another crude dimension reduction is ignoring dimensions
+  + Once we cluster based on two sets of vars, see how the clusterings compare
+  + See how the distances compare
+  + Perform dimension reduction jointly
+
+# Regression on Aggregated Counts ---
+
+- First, just summing counts of licenses
+- We need to compare rates
+- We find that most rates are very small, with a few getting much larger, so we 
+use a log scale
+- As a response, look at the liquor and all crimes
+- Make plots, just to see association, follow-up with formal regressions to validate
+ visual intuition
+- Regress with control covariates
+
+## Liquor Crimes ---
+
+- Code for liquor crimes only
+
+Setup, since haven't run code yet.
+```{r regress_liquor_crime}
+# Load the data
+crime_census_alcohol <- read.csv("~/datadive_201503_sf-health-improvement-partnership/data/processed_data/crime_census_alcohol.csv")
+
+# Filter down to those we have reliable rate estimates for
+crime_census_alcohol <- filter(crime_census_alcohol, Pop2010 > 1000)
+
+# Give labels to interesting columns
+all_cols <- colnames(crime_census_alcohol)
+license_cols <- all_cols[grep("license", all_cols)]
+crime_cols <- all_cols[grep("crime", all_cols)]
+census_cols <- setdiff(all_cols, c(license_cols, crime_cols, "Tract2010"))
+
+# Labels for crimes that are more plausibly related to alcohol
+alcohol_crime_cols <- c("crime_liquor_laws", "crime_driving_under_the_influence",
+                        "crime_drunkenness", "crime_loitering",
+                        "crime_family_offenses", "crime_drug_narcotic", 
+                        "crime_disorderly_conduct")
+
+violent_crime_cols <- c("crime_assault", "crime_robbery", 
+                        "crime_sex_offenses_forcible", "crime_suicide")
+```
+
+```{r}
+license_total <- rowSums(crime_census_alcohol[, license_cols])
+alcohol_crime_total <- rowSums(crime_census_alcohol[, alcohol_crime_cols])
+violent_crime_total <- rowSums(crime_census_alcohol[, violent_crime_cols])
+
+# Log transform (see appendix for motivation)
+crime_census_alcohol[, license_cols] <- crime_census_alcohol[, license_cols] + 1
+crime_census_alcohol[, c(license_cols, crime_cols)] <- log(1 + crime_census_alcohol[, c(license_cols, crime_cols)])
+```
+
+
+
+## Alcohol Related Crimes ---
+
+- Interpretation of plot, for all grouped together
+  + Increasing density of liquor establishments is associated with an increase
+  in number of liquor related crimes (mention what they are)
+  + For a fixed density of liquor establishments, there is still a substantial variation
+  across crime rates
+- Condition on income level, unemployment
+  + Look at shaded plots: pattern is not so strong by eye. Different colors mean
+  different levels of income, unemployment within census tract
+  + Look at faceted plots
+- Interpretations
+  + Seems like the effect size of increases in liquor store density on liquor crime
+  density are larger in neighorhoods with below median income
+
+  + Run regressions to quantify these differences
+  + Run joint regression y ~ beta0 + (beta1 + beta2 * I(above median)) * liquor
+    * This turns out to not be significant. So, even though visually we see one
+    pattern, this is not formally statistically significant
+  + Run joint regression y ~ beta0 + beta1 * liquor + beta2 * median income
+    * Idea is now can interpret liquor store effect controlling for median income
+
+```{r}
+# Combine data
+above_median_inc <- I(crime_census_alcohol$med_income > median(crime_census_alcohol$med_income))
+below_median_unemp <- I(crime_census_alcohol$Unemploy_p < median(crime_census_alcohol$Unemploy_p))
+liquor_laws_data <- cbind(license_total, alcohol_crime_total, crime_census_alcohol[, c("med_income", "Unemploy_p")], above_median_inc, below_median_unemp)
+
+# Make plots
+ggplot(liquor_laws_data) + 
+  geom_point(aes(x=license_total, y=alcohol_crime_total, col=med_income), size=4)  + 
+  scale_color_gradient2(midpoint=7e4, mid="plum", high="red", low="steelblue") +
+  scale_x_log10() + 
+  scale_y_log10() +
+  ggtitle("Alcohol Access Density vs. Liquor Crime Density, colored by income") +
+  custom_theme()
+
+ggplot(liquor_laws_data) + 
+  geom_point(aes(x=license_total, y=alcohol_crime_total, col=Unemploy_p), size=4)  + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  scale_color_gradient2(midpoint=10, mid="plum", high="red", low="steelblue") +
+  ggtitle("Alcohol Access Density vs. Liquor Crime Density, colored by unemployment") +
+  custom_theme()
+```
+
+```{r}
+# Make plots
+ggplot(liquor_laws_data) + 
+  geom_point(aes(x=license_total, y=alcohol_crime_total, col=med_income), size=4)  + 
+  scale_color_gradient2(midpoint=7e4, mid="plum", high="darkblue", low="red") +
+  scale_x_log10() + 
+  scale_y_log10() +
+  facet_wrap(~above_median_inc) +
+  ggtitle("Alcohol Access Density vs. Alcohol-related Crime Density, tracts above and below median income") + 
+  custom_theme()
+
+ggplot(liquor_laws_data) + 
+  geom_point(aes(x=license_total, y=alcohol_crime_total, col=Unemploy_p), size=4)  + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  facet_wrap(~below_median_unemp) +
+  scale_color_gradient2(midpoint=10, mid="plum", high="red", low="darkblue") +
+  ggtitle("Alcohol Access Density vs. Alcohol-Related Crime Density, tracts above and below median unemployment") + 
+  custom_theme()
+```
+
+```{r}
+# Not actually significant in interaction model...
+liquor_law_interact_inc_model <- lm(log(1 + alcohol_crime_total) ~ log(1 + license_total) + log(1 + license_total) * above_median_inc, data=liquor_laws_data)
+summary(liquor_law_interact_inc_model)
+
+# Not even unemployment makes a difference
+liquor_law_interact_unemp_model <- lm(log(1 + alcohol_crime_total) ~ log(1 + license_total) + log(1 + license_total) * below_median_unemp, data=liquor_laws_data)
+summary(liquor_law_interact_unemp_model)
+
+# Pretty significant here
+liquor_law_inc_control_model <- lm(log(1 + alcohol_crime_total) ~ log(1 + license_total) + log(1 + license_total) + med_income, data=liquor_laws_data)
+summary(liquor_law_inc_control_model)
+
+# Kinda significant here
+liquor_law_unemp_control_model <- lm(log(1 + alcohol_crime_total) ~ log(1 + license_total) + Unemploy_p, data=liquor_laws_data)
+summary(liquor_law_unemp_control_model)
+
+# not signifiant here though...
+liquor_law_unemp_interaction_model <- lm(log(1 + alcohol_crime_total) ~ log(1 + license_total) + Unemploy_p + log(1 + license_total) * Unemploy_p, data=liquor_laws_data)
+summary(liquor_law_unemp_interaction_model)
+```
+
+## Violent Crimes---
+
++ What about violent crimes? Repeat same bullets as above
+
+```{r}
+liquor_laws_data <- cbind(license_total, violent_crime_total, crime_census_alcohol[, c("med_income", "Unemploy_p")], above_median_inc, below_median_unemp)
+
+# Make plots
+ggplot(liquor_laws_data) + 
+  geom_point(aes(x=license_total, y=violent_crime_total, col=med_income), size=4)  + 
+  scale_color_gradient2(midpoint=7e4, mid="plum", high="darkblue", low="red") +
+  scale_x_log10() + 
+  scale_y_log10() +
+  facet_wrap(~above_median_inc) +
+  ggtitle("Alcohol Access Density vs. Alcohol-related Crime Density, tracts above and below median income") + 
+  custom_theme()
+
+ggplot(liquor_laws_data) + 
+  geom_point(aes(x=license_total, y=violent_crime_total, col=Unemploy_p), size=4)  + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  facet_wrap(~below_median_unemp) +
+  scale_color_gradient2(midpoint=10, mid="plum", high="red", low="darkblue") +
+  ggtitle("Alcohol Access Density vs. Alcohol-Related Crime Density, tracts above and below median unemployment") + 
+  custom_theme()
+```
+
+```{r}
+# Not actually significant in interaction model...
+liquor_law_interact_inc_model <- lm(log(1 + violent_crime_total) ~ log(1 + license_total) + log(1 + license_total) * above_median_inc, data=liquor_laws_data)
+summary(liquor_law_interact_inc_model)
+
+# Not even unemployment makes a difference
+liquor_law_interact_unemp_model <- lm(log(1 + violent_crime_total) ~ log(1 + license_total) + log(1 + license_total) * below_median_unemp, data=liquor_laws_data)
+summary(liquor_law_interact_unemp_model)
+
+# Pretty significant here
+liquor_law_inc_control_model <- lm(log(1 + violent_crime_total) ~ log(1 + license_total) + log(1 + license_total) + med_income, data=liquor_laws_data)
+summary(liquor_law_inc_control_model)
+
+# Kinda significant here
+liquor_law_unemp_control_model <- lm(log(1 + violent_crime_total) ~ log(1 + license_total) + Unemploy_p, data=liquor_laws_data)
+summary(liquor_law_unemp_control_model)
+
+# Significant interaction
+liquor_law_unemp_interaction_model <- lm(log(1 + violent_crime_total) ~ log(1 + license_total) + Unemploy_p + log(1 + license_total) * Unemploy_p, data=liquor_laws_data)
+summary(liquor_law_unemp_interaction_model)
+```
+
+# General Patterns in Unaggregated Counts ---
+
+- Everything so far has been one dimensional, really ought to consider
+different crimes and liquor types separately, do more intelligent aggregation
+- Some groups of license types / crime types are quantitatively grouped together [still focus on liquor related crimes]
+- Further, which license types are associated with which types of crimes? 
+Which groups of license types are associated with which groups of crimes?
+- Do any tracts show an especially high level of (1) one group 
+of licenses, or (2) one group of crimes? What about groups of tracts?
+- The point is that it's easy to speak about single crime and license types at the single tract level, as well as the sum across crimes, licenses and tracts. But, we would appreciate intermediate levels of resolution if there is some grouping on these variables (but the regime is not entirely homogeneous)
+- Two very general statistical tools available for this sort of reduction are
+multivariate analysis and clustering. 
+
+## Cluster Analysis
+
+### Clustering tracts
+
+- Define a distance between tracts, based on different kinds of data
+- Which tracts group together? How similar are they across the different metrics?
+- Maybe clustering tracts using similarity across sums within clustered columns?
+
+## Multivariate Analysis on Unaggregated ---
+
+- Clustering assigns a hard label to each tract
+- Multivariate analysis attempts to find a lower dimensional representation of the 
+data that doesn't lose too much information. What are the sourecs of maximum
+variation?
+
+### Bivarite Correlations ---
+
+- Before full multivariate analysis, consider the largest bivariate correlations
+- All crimes, and just crimes of interest
+- Interpretation: The highest correlation is within data groups
+  + But nonetheless very strong association across groups
+  + Consider list of top correlations across crime, license, and demographics
+  + List is of limited utility: It's unecessarily verbose of multiple crimes are 
+  all correlated with each other, they will all give high correlations with license
+  types.
+
+```{r}
+
+ProcessCors <- function(data) {
+  cor_data <- cor(data)
+  rownames(cor_data) <- gsub("crime_", "", rownames(cor_data))
+  colnames(cor_data) <- gsub("crime_", "", colnames(cor_data))
+  diag(cor_data) <- 0
+  
+  # get melted correlation matrix
+  m_cor_data <- arrange(melt(cor_data), desc(abs(value)))
+  
+  # remove duplicate correlations
+  m_cor_data <- m_cor_data[seq(1, nrow(m_cor_data), by=2), ]
+  return(list(cor_data=cor_data, m_cor_data=m_cor_data))
+}
+# All laws
+all_laws_cors <- ProcessCors(crime_census_alcohol[, c(census_cols, crime_cols, license_cols)])
+head(all_laws_cors$m_cor_data)
+
+# Alcohol and violent crime cols
+alc_laws_cors <- ProcessCors(crime_census_alcohol[, c(census_cols, violent_crime_cols, alcohol_crime_cols, license_cols)])
+head(alc_laws_cors$m_cor_data)
+```
+
+### Basic Clustering & Biclustering ---
+- A brief digression to show the biclustering of data according to both raw data
+and the correlations
+- The interpretation is that we try to hierarchically cluster features, based on raw
+data or correlations between them
+- Groups of correlations or groups of actual data that are most similar to each other
+are merged first
+- This is usually just a nice preliminary visualization, not too much insight either
+- Yellow is higher correlated than red
+- Blocking is interesting: These are variables that can be essentially collapsed.
+- But we see this pattern of crimes with each other and licenses with each other.
+- Notice it's symmetric, trees are identical on left and top.
+- Also, some substantial correlation across groups of cols, as expected from before
+- Mention the top fiew: Median income and college. Median Income and License 85.
+- 85 and 45 are merged first: These are most similar license types
+- Much more interpretation is possible
+
++ Can do the same with tracts as one of the heatmap dimensions.
+
+```{r}
+# all laws
+heatmap(all_laws_cors$cor_data)
+
+# alcohol crimes
+heatmap(alc_laws_cors$cor_data)
+```
+
+```{r, fig.height=10, fig.width=10}
+heatmap(scale(crime_census_alcohol[, c(census_cols, violent_crime_cols, alcohol_crime_cols, license_cols)]))
+```
+
+### Canonical Correlation Analysis ---
+
+- Dimension reduction method popular when we have multiple tables. It's a 
+generalization of PCA applicable when we have several tables
+- Interpretation
+  + Satisfying that crimes that seem similar to each other are labeled that way
+  + Can look at tracts that are overrepresented in some kinds of crimes than others
+  + Doesn't seem to really associate with either income or unemployment. There is 
+  some unknown variation in tracts that drives this projection, but we haven't 
+  found the feature (or groups of features) driving that, at least not at this 
+  more cursory analysis...
+
+```{r, fig.show='hide'}
+cancor_result <- cancor(scale(crime_census_alcohol[, license_cols]), 
+                        scale(crime_census_alcohol[, c(violent_crime_cols, alcohol_crime_cols)]))
+cancor_plot_data <- rbind(data.frame(cancor_result$xcoef[, 1:2], type="license", name=gsub("license_", "", license_cols)),
+                          data.frame(cancor_result$ycoef[, 1:2], type="crime", name=gsub("crime_", "", c(violent_crime_cols, alcohol_crime_cols))))
+ggplot(cancor_plot_data) + geom_text(aes(x=X1,y=X2,label=name))
+```
+
+```{r}
+ggplot(cancor_plot_data) + geom_text(aes(x=X1,y=X2,label=name), size=3) +
+  ggtitle("Canonical correlations on table features")
+```
+
+# Detection of Anamolous Tracts ---
+
+## Highly ranked ---
+
+### Crime ---
+- What are the tracts that have the highest violent crime, liquor related crime
+
+```{r}
+alcohol_crimes <- melt(crime_census_alcohol[, c("Tract2010", alcohol_crime_cols)], 
+                      id.vars="Tract2010")
+alcohol_crimes <- ddply(alcohol_crimes, .(Tract2010), transform, mean_val=mean(value))
+alcohol_crimes <- arrange(alcohol_crimes, desc(mean_val))[1:200, ]
+
+ggplot(alcohol_crimes) + 
+  geom_point(aes(x=reorder(as.factor(Tract2010), desc(value)), y=value, col=variable)) + 
+  custom_theme() + 
+  ggtitle("Tracts with highest liquor related crime")
+```
+
+```{r}
+violent_crimes <- melt(crime_census_alcohol[, c("Tract2010", violent_crime_cols)], 
+                      id.vars="Tract2010")
+violent_crimes <- ddply(violent_crimes, .(Tract2010), transform, mean_val=mean(value))
+violent_crimes <- arrange(violent_crimes, desc(mean_val))[1:200, ]
+
+ggplot(violent_crimes) + 
+  geom_point(aes(x=reorder(as.factor(Tract2010), desc(value)), y=value, col=variable)) + 
+  custom_theme() + 
+  ggtitle("Tracts with highest violent crime")
+```
+
+### Liquor ---
+- What are tracts with the highest liquor store densities, overall
+- Just on site
+- Just off site
+
+```{r}
+licenses <- melt(crime_census_alcohol[, c("Tract2010", license_cols)], 
+                      id.vars="Tract2010")
+licenses <- ddply(licenses, .(Tract2010), transform, mean_val=mean(value))
+licenses <- arrange(licenses, desc(mean_val))[1:200, ]
+
+ggplot(licenses) + 
+  geom_point(aes(x=reorder(as.factor(Tract2010), desc(value)), y=value, col=variable)) + 
+  custom_theme() + 
+  ggtitle("Tracts with highest density of licenses")
+```
+
+
+## Matching: Comparing different distances ---
+- When do two tracts seem very similar according to one data set but very
+different according to another?
+- What are these tracts?
+
+# Limitations ---
+
+- Sales level information
+- Proxies for patrolling bias
+- Integration of 311 data
+- Incorporation of spatial distance function
+
+# Appendix
+
+## Histograms of measured Variables across tracts
+
+```{r}
+# Put these in an appendix
+ggplot(melt(crime_census_alcohol[, census_cols])) + 
+  geom_histogram(aes(x=value)) + 
+  facet_wrap(~variable, scale="free") +
+  custom_theme() +
+  ggtitle("Demographic Information across Tracts")
+
+# Maybe worth putting in a pairs plot as well?
+ggplot(melt(crime_census_alcohol[, alcohol_crime_cols])) + 
+  geom_histogram(aes(x=value)) + 
+  facet_wrap(~variable, scale="free") +
+  scale_y_sqrt() +
+  custom_theme() +
+  ggtitle("Rates of Alcohol-Related Crimes across Tracts")
+
+ggplot(melt(crime_census_alcohol[, setdiff(crime_cols, alcohol_crime_cols)])) + 
+  geom_histogram(aes(x=value)) + 
+  facet_wrap(~variable, scale="free") +
+  scale_y_sqrt() +
+  custom_theme() +
+  ggtitle("Rates of Alcohol-Unrelated Crimes across Tracts")
+
+ggplot(melt(crime_census_alcohol[, license_cols])) + 
+  geom_histogram(aes(x=value)) + 
+  facet_wrap(~variable, scale="free") +
+  scale_y_sqrt() + 
+  custom_theme() +
+  ggtitle("Rates of License Rates across Tracts")
+```
