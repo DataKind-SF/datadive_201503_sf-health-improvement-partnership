@@ -46,48 +46,63 @@ def main():
     df = df.sort(columns=['incidntnum', 'datetime']).reset_index(drop=True)
 
     # Cut resolution
-    these = ['UNFOUNDED', 'CLEARED-CONTACT JUVENILE FOR MORE INFO', 'EXCEPTIONAL CLEARANCE']
-    df = df[~df.resolution.isin(these)].reset_index(drop=True)
+    unrelated_res = ['UNFOUNDED', 'CLEARED-CONTACT JUVENILE FOR MORE INFO', 'EXCEPTIONAL CLEARANCE']
+    df = df[~df.resolution.isin(unrelated_res)].reset_index(drop=True)
 
     # Cut all before 2010
     df = df[df.datetime > pd.to_datetime('2010', format='%Y')].reset_index(drop=True)
 
     # Cut Category (s)
-    keepthese = ['SUICIDE', 'SEX OFFENSES, FORCIBLE', 'ASSAULT', 'ROBBERY', 'WEAPON LAWS', 'DRUG/NARCOTIC',
+    related_cat = ['SUICIDE', 'SEX OFFENSES, FORCIBLE', 'ASSAULT', 'ROBBERY', 'WEAPON LAWS', 'DRUG/NARCOTIC',
                  'DRUNKENNESS', 'DRIVING UNDER THE INFLUENCE', 'DISORDERLY CONDUCT', 'LIQUOR LAWS',
                  'VANDALISM', 'FAMILY OFFENSES', 'PROSTITUTION', 'SEX OFFENSES, NON FORCIBLE', 'TRESPASS',
                  'LOITERING', 'SUSPICIOUS OCC']
 
-    df = df[df.category.isin(keepthese)].reset_index(drop=True)
+    df = df[df.category.isin(related_cat)].reset_index(drop=True)
 
     # Throw out garbage columns
-    keepthese = ['incidntnum', 'category', 'descript', 'dayofweek', 'pddistrict', 'resolution', 'address', 'x', 'y',
+    relevant_param = ['incidntnum', 'category', 'descript', 'dayofweek', 'pddistrict', 'resolution', 'address', 'x', 'y',
                  'datetime']
-    df = df[keepthese]
+    df = df[relevant_param]
 
     # add Coarse Category
-    violence = ['SEX OFFENSES, FORCIBLE', 'SEX OFFENSES, NON FORCIBLE', 'ASSAULT', 'ROBBERY', 'WEAPON LAWS', 'SUICIDE',
-                'FAMILY OFFENSES']
-    vandalism = ['SUSPICIOUS OCC', 'VANDALISM', 'TRESPASS']
-    drugs = ['DRUG/NARCOTIC']
-    alcohol = ['LIQUOR LAWS', 'DRUNKENNESS', 'DISORDERLY CONDUCT', 'LOITERING']
-    prostitution = ['PROSTITUTION']
-    dui = ['DRIVING UNDER THE INFLUENCE']
+    # violence = ['SEX OFFENSES, FORCIBLE', 'SEX OFFENSES, NON FORCIBLE', 'ASSAULT', 'ROBBERY', 'WEAPON LAWS', 'SUICIDE',
+    #             'FAMILY OFFENSES']
+    # vandalism = ['SUSPICIOUS OCC', 'VANDALISM', 'TRESPASS']
+    # drugs = ['DRUG/NARCOTIC']
+    # alcohol = ['LIQUOR LAWS', 'DRUNKENNESS', 'DISORDERLY CONDUCT', 'LOITERING']
+    # prostitution = ['PROSTITUTION']
+    # dui = ['DRIVING UNDER THE INFLUENCE']
+    crimes = {
+            "violence": ['SEX OFFENSES, FORCIBLE', 'SEX OFFENSES, NON FORCIBLE', 'ASSAULT', 'ROBBERY', 'WEAPON LAWS', 'SUICIDE',
+                         'FAMILY OFFENSES'],
+             "vandalism": ['SUSPICIOUS OCC', 'VANDALISM', 'TRESPASS'],
+             "drugs": ['DRUG/NARCOTIC'],
+             "alcohol": ['LIQUOR LAWS', 'DRUNKENNESS', 'DISORDERLY CONDUCT', 'LOITERING'],
+             "prostitution": ['PROSTITUTION'],
+             "dui": ['DRIVING UNDER THE INFLUENCE']}
 
-    df['CoarseCategroy'] = None
-    for i in df.index:
-        if df.category[i] in violence:
-            df['CoarseCategroy'][i] = 'violence'
-        if df.category[i] in vandalism:
-            df['CoarseCategroy'][i] = 'vandalism'
-        if df.category[i] in drugs:
-            df['CoarseCategroy'][i] = 'drugs'
-        if df.category[i] in alcohol:
-            df['CoarseCategroy'][i] = 'alcohol'
-        if df.category[i] in prostitution:
-            df['CoarseCategroy'][i] = 'prostitution'
-        if df.category[i] in dui:
-            df['CoarseCategroy'][i] = 'dui'
+    for crime in crimes:
+        for crime_type in crimes[crime]:
+            df.CoarseCategory[df.category == crime_type] = crime
+
+    # for i in violence:
+    #     df.CoarseCategory[df.category == i] = 'violence'
+    #
+    # df['CoarseCategroy'] = None
+    # for i in df.index:
+    #     if df.category[i] in violence:
+    #         df['CoarseCategroy'][i] = 'violence'
+    #     if df.category[i] in vandalism:
+    #         df['CoarseCategroy'][i] = 'vandalism'
+    #     if df.category[i] in drugs:
+    #         df['CoarseCategroy'][i] = 'drugs'
+    #     if df.category[i] in alcohol:
+    #         df['CoarseCategroy'][i] = 'alcohol'
+    #     if df.category[i] in prostitution:
+    #         df['CoarseCategroy'][i] = 'prostitution'
+    #     if df.category[i] in dui:
+    #         df['CoarseCategroy'][i] = 'dui'
 
     # add Coarse descriptor Kris code....
 
@@ -106,7 +121,7 @@ def main():
     df["newx"] = tmp[0]
     df["newy"] = tmp[1]
 
-    return df
+    df.to_csv("final_data.csv", index=False)
 
 
 if __name__ == '__main__':
