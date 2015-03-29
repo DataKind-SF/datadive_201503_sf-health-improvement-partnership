@@ -39,5 +39,5 @@ function dataAnalyzer(size, color, opacity) {
   }
 };
 
-$.getJSON('data/alcohol_stores.json', {}, dataAnalyzer(10, 'black', 0.4));
+$.getJSON('data/alcohol_stores.json', {}, dataAnalyzer(100, 'black', 0.2));
 $.getJSON('data/SEX OFFENSES, FORCIBLE.json', {}, dataAnalyzer(10, 'red', 0.1));

@@ -6,3 +6,8 @@ To fill out the `clustering_outputs` folder run the file:
 ```
 KMeans Clustering Crime & Alcohol Off-Site Sales Locations- Cluster Output Script.ipynb
 ```
+
+
+Author:
+Bill Chambers
+wchambers@ischool.berkeley.edu
