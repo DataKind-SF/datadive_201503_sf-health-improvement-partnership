@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <style>
+  svg {
+      max-width: 100%;
+      max-height: 100%;
+  }
+  </style>
+</head>
+
+<body>
+
+  <div id="canvas"></div>
+  <script src="bower_components/d3/d3.js"></script>
+  <script src="http://d3js.org/topojson.v1.min.js"></script>
+  <script>
+    window.addEventListener('load', function() {
+
+      var width = 640,
+          height = 480;
+
+
+      var canvas = d3.select('body')
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height);
+
+      var projection = d3.geo.albers()
+          .rotate([122.45, 0])
+          .center([0, 37.7833])
+          /*.parallels([37.65, 37.82])*/
+          .parallels([35, 40])
+          .scale(1200 * 200)
+          /*.scale(50000)*/
+          .translate([width / 2, height / 2]);
+
+      var path = d3.geo.path()
+          .projection(projection)
+          .pointRadius(2);
+
+
+      d3.json("data/sftractstopo.json", function(error, uk) {
+        var tracts = topojson.feature(uk, uk.objects.sftracts);
+
+        var group = canvas.selectAll('g')
+          .data(tracts.features)
+          .enter()
+          .append("g");
+
+
+        var areas = group.append('path')
+          .attr('d', path)
+          .attr('class', 'area')
+          .attr('fill', 'steelblue');
+
+      });
+    });
+
+  </script>
+</body>
+</html>
