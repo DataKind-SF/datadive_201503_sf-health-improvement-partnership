@@ -41,6 +41,6 @@ function dataAnalyzer(size, color, opacity) {
 
 $.getJSON('data/alcohol_stores.json', {}, dataAnalyzer(100, 'black', 0.2));
 $.getJSON('data/ASSAULTS.json', {}, dataAnalyzer(10, 'red', 0.1));
-$.getJSON('data/liquor_stores_cluster_centers.json', {}, dataAnalyzer(200, 'black', 0.6));
-$.getJSON('data/ASSAULT_cluster_centers.json', {}, dataAnalyzer(200, 'red',0.6));
-$.getJSON('data/SEX OFFENSES, FORCIBLE_cluster_centers.json', {}, dataAnalyzer(200, 'green',0.6));
+$.getJSON('data/liquor_stores_cluster_centers.json', {}, dataAnalyzer(200, 'black', 0.4));
+$.getJSON('data/ASSAULT_cluster_centers.json', {}, dataAnalyzer(200, 'red',0.4));
+$.getJSON('data/SEX OFFENSES, FORCIBLE_cluster_centers.json', {}, dataAnalyzer(200, 'orange',0.4));
