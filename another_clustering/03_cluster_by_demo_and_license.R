@@ -23,11 +23,12 @@ summary(crime_census_alcohol$Pop2010[crime_census_alcohol$Pop2010 < 2000])
 crime_census_alcohol = subset(crime_census_alcohol, Pop2010 >= 500)
 
 # k-means clustering
-names(crime_census_alcohol)[3:8] = paste('demo', tolower(names(crime_census_alcohol)[3:8]), sep = '_')
+names(crime_census_alcohol)[4:9] = paste('demo', tolower(names(crime_census_alcohol)[4:9]), sep = '_')
 census_alcohol = crime_census_alcohol %>%
   select(starts_with('demo'), starts_with('license'))
 
-do_kmeans = function(dat, k) {
+do_kmeans = function(dat, k, seed) {
+  set.seed(seed)
   model = kmeans(dat, k)
   
   kmeans_result = list()
@@ -38,7 +39,7 @@ do_kmeans = function(dat, k) {
   kmeans_result
 }
 
-kmeans_results = lapply(1:40, function(x) do_kmeans(census_alcohol, x))
+kmeans_results = lapply(1:40, function(x) do_kmeans(census_alcohol, x, 123456))
 
 # plot results
 kmeans_dists = data.frame(
@@ -59,7 +60,7 @@ relevant_crimes = 'arson|assault|burglary|disorderly_conduct|driving_under_the_i
 
 # calculate aggregate crime rate
 crime_census_alcohol = crime_census_alcohol %>%
-  select(Tract2010, Pop2010, starts_with('demo'), starts_with('license'), cluster) %>%
+  select(Id, Tract2010, Pop2010, starts_with('demo'), starts_with('license'), cluster) %>%
   cbind(crime_census_alcohol[names(crime_census_alcohol)[grep(relevant_crimes, names(crime_census_alcohol))]])
 
 crime_census_alcohol$agg_crime = rowSums(crime_census_alcohol[names(crime_census_alcohol)[grep('crime', names(crime_census_alcohol))]])
@@ -69,5 +70,48 @@ crime_per_cluster = crime_census_alcohol %>%
   group_by(cluster) %>%
   summarise(agg_crime_var = var(agg_crime))
 
+crime_census_alcohol = crime_census_alcohol %>%
+  left_join(crime_per_cluster, by = 'cluster') %>%
+  tbl_df()
+
 write.csv(crime_census_alcohol, file = 'output/crime_census_alcohol.csv', row.names = F)
 write.csv(crime_per_cluster, file = 'output/crime_per_cluster.csv', row.names = F)
+
+# make maps
+tract = readOGR(dsn = "data/gz_2010_06_140_00_500k", layer = "gz_2010_06_140_00_500k")
+tract = fortify(tract, region="GEO_ID")
+tract = select(tract, long, lat, group, order, id)
+
+crime_census_alcohol = crime_census_alcohol %>%
+  left_join(tract, by = c('Id' = 'id'))
+
+plot_data = subset(crime_census_alcohol, lat < 37.85)
+cluster_label = plot_data %>%
+  group_by(cluster, Tract2010) %>%
+  summarise(avg_long = mean(long), avg_lat = mean(lat))
+
+cluster_plot = 
+  ggplot() +
+  geom_polygon(data = plot_data, 
+               aes(x = long, y = lat, group = group, fill = factor(cluster)), 
+               color = 'black', size = 0.25) +
+  geom_text(data = cluster_label, aes(avg_long, avg_lat, label = cluster), size = 3) +
+  scale_x_continuous('') + scale_y_continuous('') +
+  ggtitle('Geographic locations of clusters') +
+  theme(legend.position = 'none', panel.background = element_blank(), panel.border = element_blank())
+
+avg_crime_plot = 
+  ggplot() +
+  geom_polygon(data = plot_data, 
+               aes(x = long, y = lat, group = group, fill = agg_crime), 
+               color = 'black', size = 0.25) +
+  scale_fill_gradient(name = 'Average incidence per person', low = '#dadaeb', high = '#3f007d') +
+  geom_text(data = cluster_label, aes(avg_long, avg_lat, label = cluster), size = 3) +
+  scale_x_continuous('') + scale_y_continuous('') +
+  ggtitle('Alcohol-related incidence\nper person and per tract') +
+  theme(legend.position = 'bottom', panel.background = element_blank(), panel.border = element_blank())
+
+cluster_plots = list(cluster_plot, avg_crime_plot)
+save(cluster_plots, file = 'output/cluster_plots.rda')
+ggsave(cluster_plot, file = 'output/cluster_plot_1.png', width = 6, height = 6, dpi = 1000)
+ggsave(avg_crime_plot, file = 'output/cluster_plot_2.png', width = 6, height = 7.3, dpi = 1000)

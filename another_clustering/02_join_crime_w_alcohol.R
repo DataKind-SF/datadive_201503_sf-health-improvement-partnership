@@ -5,14 +5,12 @@ options(stringsAsFactors = F)
 # load census tract data
 census = read.csv('data/census_tract_demographics.csv')
 census = census %>%
-  mutate(white = white_cnt / Pop2010,
-         black = black_cnt / Pop2010,
-         asian = asian_cnt / Pop2010,
-         hispanic = hispanic_c / Pop2010,
-         college = some_colle / Pop2010
+  mutate(white = white_cnt / (white_cnt+black_cnt+asian_cnt+other_cnt_+hispanic_c),
+         black = black_cnt / (white_cnt+black_cnt+asian_cnt+other_cnt_+hispanic_c),
+         asian = asian_cnt / (white_cnt+black_cnt+asian_cnt+other_cnt_+hispanic_c),
+         hispanic = hispanic_c / (white_cnt+black_cnt+asian_cnt+other_cnt_+hispanic_c)
          ) %>%
-  select(Tract2010, Pop2010, white, black, asian, hispanic, college,
-         med_income, Unemploy_p)
+  select(Id, Tract2010, Pop2010, white, black, asian, hispanic, med_income, Unemploy_p)
 
 # merge with crime data
 load('output/crime_agg.rda')
@@ -29,7 +27,7 @@ crime_census$Category = paste('crime', crime_census$Category, sep = '_')
 
 # reshape to wide
 crime_census_wide = dcast(crime_census, 
-                          Tract2010 + Pop2010 + white + black + asian + hispanic + college + med_income + Unemploy_p ~ Category)
+                          Id + Tract2010 + Pop2010 + white + black + asian + hispanic + med_income + Unemploy_p ~ Category)
 crime_census_wide[is.na(crime_census_wide)] = 0
 
 # merge with alcohol data
