@@ -112,6 +112,7 @@ Setup, since haven't run code yet.
 # Load the data
 crime_census_alcohol <- read.csv("~/datadive_201503_sf-health-improvement-partnership/data/processed_data/crime_census_alcohol.csv")
 
+
 # Filter down to those we have reliable rate estimates for
 crime_census_alcohol <- filter(crime_census_alcohol, Pop2010 > 1000)
 
@@ -406,6 +407,7 @@ ggplot(cancor_plot_data) + geom_text(aes(x=X1,y=X2,label=name), size=3) +
 
 ### Crime ---
 - What are the tracts that have the highest violent crime, liquor related crime
+  + Looking at the tracts with the highest liquor related crime rate, the top tracts are actually all clustered around the same area near the Tenderloin district.
 
 ```{r}
 alcohol_crimes <- melt(crime_census_alcohol[, c("Tract2010", alcohol_crime_cols)], 
@@ -433,6 +435,7 @@ ggplot(violent_crimes) +
 
 ### Liquor ---
 - What are tracts with the highest liquor store densities, overall
+- Interstingly, our data shows that the highest density of liquor stores are in the financial district, and the census tract (as shown by Census Tract 11700 in the plot) correpsondng to that neighborhood also rank very high in liquor related crime rate and violent crime rate. However, note that this doesn't necessary support that finanical district has highest crime rate because it has highest density of liquor stores. Since inherently, rate and density is computed by averaging the population count. Because finanical district is more like a commericial neighborhood as opposed to a residential area, this could be an outlier in our interpertation. Note we already have excluded other outlier of this sort where there's low population count, such as the Golden Gate Park census tract.
 - Just on site
 - Just off site
 
