@@ -1,0 +1,41 @@
+---
+title: "alcohol description across categories"
+author: "Kris Sankaran"
+date: "March 28, 2015"
+output: pdf_document
+---
+
+```{r}
+library("ggplot2")
+library("plyr")
+library("dplyr")
+library("knitr")
+```
+
+```{r}
+opts_knit$set(root.dir="~/datadive_201503_sf-health-improvement-partnership/")
+opts_chunk$set(fig.width=10, fig.height=7, dpi=120, warning=F, echo=F,
+               cache=T, message=F)
+```
+
+```{r}
+crime_311 <- get(load("data/processed_data/crime_311_incidents_map_since_2010.RData"))
+alcohol <- filter(crime_311, Category=="LIQUOR LAWS")
+
+alcohol_descript <- group_by(alcohol, Descript)
+alcohol_descript_breakdown <- summarise(alcohol_descript, count=n())
+ggplot(alcohol_descript_breakdown) + 
+  geom_bar(aes(x=Descript, y=count), stat="identity") + 
+  theme(axis.text.x=element_text(angle=-90))
+
+ggplot(alcohol_descript_breakdown) + 
+  geom_bar(aes(x=Descript, y=count), stat="identity") + 
+  theme(axis.text.x=element_text(angle=-90))
+
+alcohol_descript_day <- group_by(alcohol, Descript, DayOfWeek)
+alcohol_descript_breakdown_dow <- summarise(alcohol_descript_day, count=n())
+ggplot(alcohol_descript_breakdown_dow) + 
+  geom_bar(aes(x=Descript, y=count), stat="identity") + 
+  theme(axis.text.x=element_text(angle=-90)) + 
+  facet_wrap(~DayOfWeek)
+```
