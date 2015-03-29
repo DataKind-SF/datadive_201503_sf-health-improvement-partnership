@@ -22,12 +22,12 @@ cat("\014")  # Clear console
 
 ```{r, echo=FALSE}
 opts_knit$set(root.dir="~/datadive_201503_sf-health-improvement-partnership/")
-opts_chunk$set(fig.width=6, fig.height=5, dpi=120, warning=F, echo=F,
+opts_chunk$set(fig.width=10, fig.height=5, dpi=120, warning=F, echo=F,
                cache=T, message=F)
 ```
 
 ```{r theme}
-custom_theme <- function(text_size=6, legend_size=0.4, margin_size=0.01) {
+custom_theme <- function(text_size=10, legend_size=0.4, margin_size=0.01) {
     # Custom ggplot theme
     return (theme(axis.text.x=element_text(angle=-90, size=text_size),
                   axis.text.y=element_text(size=text_size),
@@ -394,22 +394,62 @@ cancor_result <- cancor(scale(crime_census_alcohol[, license_cols]),
                         scale(crime_census_alcohol[, crime_cols]))
 cancor_plot_data <- rbind(data.frame(cancor_result$xcoef[, 1:2], type="license", name=gsub("license_", "", license_cols)),
                           data.frame(cancor_result$ycoef[, 1:2], type="crime", name=gsub("crime_", "", crime_cols)))
-ggplot(cancor_plot_data) + geom_text(aes(x=X1,y=X2,label=name), size=3)
+```
+
+```{r}
+ggplot(cancor_plot_data) + geom_text(aes(x=X1,y=X2,label=name), size=3) +
+  ggtitle("Canonical correlations on table features")
 ```
 
 # Detection of Anamolous Tracts ---
 
-## Highly ranked
+## Highly ranked ---
 
-### Crime
-- What are the tracts that have the highest overall crime, liquor related crime
+### Crime ---
+- What are the tracts that have the highest violent crime, liquor related crime
 
-### Liquor
+```{r}
+alcohol_crimes <- melt(crime_census_alcohol[, c("Tract2010", alcohol_crime_cols)], 
+                      id.vars="Tract2010")
+alcohol_crimes <- ddply(alcohol_crimes, .(Tract2010), transform, mean_val=mean(value))
+alcohol_crimes <- arrange(alcohol_crimes, desc(mean_val))[1:200, ]
+
+ggplot(alcohol_crimes) + 
+  geom_point(aes(x=reorder(as.factor(Tract2010), desc(value)), y=value, col=variable)) + 
+  custom_theme() + 
+  ggtitle("Tracts with highest liquor related crime")
+```
+
+```{r}
+violent_crimes <- melt(crime_census_alcohol[, c("Tract2010", violent_crime_cols)], 
+                      id.vars="Tract2010")
+violent_crimes <- ddply(violent_crimes, .(Tract2010), transform, mean_val=mean(value))
+violent_crimes <- arrange(violent_crimes, desc(mean_val))[1:200, ]
+
+ggplot(violent_crimes) + 
+  geom_point(aes(x=reorder(as.factor(Tract2010), desc(value)), y=value, col=variable)) + 
+  custom_theme() + 
+  ggtitle("Tracts with highest violent crime")
+```
+
+```{r}
+licenses <- melt(crime_census_alcohol[, c("Tract2010", license_cols)], 
+                      id.vars="Tract2010")
+licenses <- ddply(licenses, .(Tract2010), transform, mean_val=mean(value))
+licenses <- arrange(licenses, desc(mean_val))[1:200, ]
+
+ggplot(licenses) + 
+  geom_point(aes(x=reorder(as.factor(Tract2010), desc(value)), y=value, col=variable)) + 
+  custom_theme() + 
+  ggtitle("Tracts with highest density of licenses")
+```
+
+### Liquor ---
 - What are tracts with the highest liquor store densities, overall
 - Just on site
 - Just off site
 
-## Matching: Comparing different distances
+## Matching: Comparing different distances ---
 - When do two tracts seem very similar according to one data set but very
 different according to another?
 - What are these tracts?
