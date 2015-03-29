@@ -95,10 +95,13 @@ licenses, for example).
 
 We chose to aggregate the crime and alcohol license data to the census tract 
 level, and then normalize by census tract population. More specifically, we 
-(1) counted the number of venues using each of the license types within each census
+(1) counted the number of venues using each of the 23 license types within each census
 tract, then divided by the population of that census tract and (2) counted
-the number of crimes within each of the general description groups . Further, 
-we discarded those tracts with fewer than 500 people living within them, since
+the number of crimes within each of the 30 description groups. We could have
+used finer or coarser description types for both liquor vendors and 
+crimes, but this level seemed to offer a rich description without making the
+problem too high dimensional, and less tractable. Further, we discarded those tracts
+with fewer than 500 people living within them, since
 our estimates of the densities of crimes and liquor venues in such sparsely
 populated areas are less reliable. 
 
@@ -106,17 +109,23 @@ Notice that, at this stage, we have ignored (1) any spatial information at a fin
 temporal effects. Nonetheless, we believe our methods could be generalized to handle
 these situations as well.
 
-- Aggregation using License Type and Crime Category
-  + Could replicate analsis at different levels of granularity
-  + Coarser, and no real need to do dimension reduction, but perhaps less rich picture
-  + Finer, and the level of reduction would be more challenging: Working in higher
-  dimensional space.
-- Remainder is just dimension reduction followed by some sort of association
-  + Crudest dimension reduction is just summing counts
-  + Another crude dimension reduction is ignoring dimensions
-  + Once we cluster based on two sets of vars, see how the clusterings compare
-  + See how the distances compare
-  + Perform dimension reduction jointly
+### Methods
+
+For the first task, identifying global patterns, our overal methods use two
+steps: dimension reduction followed by some measure of association. By dimension
+reduction, we mean reducing many different measurements to just a few -- for example,
+the number of college educated people and the median income of a census tract can
+both be explained by an underlying "affluence" effect. By association, we mean
+taking these underlying factors and determining whether and how they are correlated.
+
+The specific tools we applied to do this reduction vary in complexity. From
+crudest to most (but still not very) sophisticated, we used
+ 
+-Crudest dimension reduction is just summing counts
+- Another crude dimension reduction is ignoring dimensions
+- Once we cluster based on two sets of vars, see how the clusterings compare
+- See how the distances compare
+- Perform dimension reduction jointly
 
 # Regression on Aggregated Counts
 
