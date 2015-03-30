@@ -1,3 +1,8 @@
+#----------------------------------------------------------------------
+# server.R
+# Backend functions for app
+# JR New, 2015
+#----------------------------------------------------------------------
 server <- function(input, output) {  
   output$map <- renderPlot({
     p_theme <- theme(axis.line=element_blank(), axis.text.x=element_blank(),

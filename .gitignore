@@ -42,7 +42,7 @@ vignettes/*.pdf
 # archives
 *.tar*
 *.tgz
-*.zip
+#*.zip
 *.bz2
 *.7z
 

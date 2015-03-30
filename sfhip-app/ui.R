@@ -1,33 +1,36 @@
+#----------------------------------------------------------------------
+# ui.R
+# User interface for app
+# JR New, 2015
+#----------------------------------------------------------------------
 header <- dashboardHeader(title = "SFHIP")
 
-sidebar <- dashboardSidebar(
-  disable = TRUE)
-
 # sidebar <- dashboardSidebar(
-#   sidebarMenu(
-#     id = "tabs", # Setting id makes input$tabs give the tabName of currently-selected tab
-#     # menuItem("Overview", tabName = "overview", icon = icon("th")),
-#     menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard"))
-#   )
-# )
+#   disable = TRUE)
 
+sidebar <- dashboardSidebar(
+  sidebarMenu(
+    id = "tabs", # Setting id makes input$tabs give the tabName of currently-selected tab
+    menuItem("Overview", tabName = "about", icon = icon("info")),
+    menuItem("Visualization", tabName = "viz", icon = icon("dashboard"))
+  )
+)
+
+boxAbout <- source("about.R")$value
 body <- dashboardBody(
-#   tabItems(
-#     # Overview tab
-#     tabItem(tabName = "overview",
-#             h3("Overview of data tool")
-#     ), 
+  tabItems(
+    # Overview tab
+    tabItem(tabName = "about",
+            boxAbout()
+    ), 
     # Dashboard tab
-#     tabItem(tabName = "dashboard",
+    tabItem(tabName = "viz",
             fluidRow(
               box(width = 9,
                   plotOutput("map", height = 500, width = 650)),
               box(title = "Plot options", width = 3,
-                  status = "primary",
-                  solidHeader = TRUE,
+                  status = "info", solidHeader = TRUE,
                   collapsible = TRUE,
-                  # sliderInput("dates_range", "Dates:", 
-                  #             min = 2010, max = 2013, value = c(2010, 2013), step = 1, sep = ""),
                   dateRangeInput("dates_range", "Date range",
                                  start = "2010-01-01", end = "2013-12-31",
                                  min = "2010-01-01", max = "2013-12-31"),
@@ -41,17 +44,13 @@ body <- dashboardBody(
                   selectInput("select_crime_categories", 
                               label = "Crime type (density)", 
                               choices = crime_categories),
-                  # checkboxGroupInput("select_crime_categories", 
-                  #                    label = "Crime type (density)", 
-                  #                    choices = crime_categories),
                   checkboxGroupInput("select_centroids", 
                                      label = "Crime type (centroids)", 
                                      choices = crime_categories_and_alcohol,
                                      selected = "Please select"))
             )
-#     )
-#   )
+    )
+  )
 )
-
 
 dashboardPage(header, sidebar, body)
