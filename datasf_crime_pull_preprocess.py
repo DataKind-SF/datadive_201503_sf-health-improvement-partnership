@@ -3,11 +3,11 @@ Code to pull DataSF.org Crime data and preprocess it on a scheduled basis with L
 """
 
 import pandas as pd
-import os
+import requests
 import json
 import pyproj
 import sys
-
+from time import time
 
 def main():
     """
@@ -15,20 +15,27 @@ def main():
     """
     # pull json of Crime... from datasf.org
     #TODO have a backup file
+    t0 = time()
     try:
-        jsonurl = 'https://data.sfgov.org/api/views/gxxq-x39z/rows.json?accessType=DOWNLOAD'
-        os.system("wget " + jsonurl + " > out.json")
+        # jsonurl = 'https://data.sfgov.org/api/views/gxxq-x39z/rows.json?accessType=DOWNLOAD'
+        # os.system("wget " + jsonurl + " > out.json")
+        d = requests.get('https://data.sfgov.org/api/views/gxxq-x39z/rows.json?accessType=DOWNLOAD', timeout=20)
     except Exception as e:
         sys.stderr.write(e.message)
         pass
-    # read result of wget pull
-    with open("rows.json?accessType=DOWNLOAD.1") as f:
-        data = f.read()
+    # # read result of wget pull
+    # with open("rows.json?accessType=DOWNLOAD.1") as f:
+    #     data = f.read()
+    print ("time to extract data from website: %f" % (time() - t0))
+    t0 = time()
 
-    data = json.loads(data)
+    data = json.loads(d.text)
     columns = [data["meta"]["view"]["columns"][i]['fieldName'].replace(":", "") for i in
                range(len(data["meta"]["view"]["columns"]))]
     df = pd.DataFrame(data["data"], columns=columns)
+
+    print ("time to create data frame: %f" % (time() - t0))
+    t0 = time()
 
     # Merge date and time
     for i in ['date', 'time']:
@@ -42,6 +49,9 @@ def main():
     del df['time']
 
     df.datetime = pd.to_datetime(df.datetime, format='%Y-%m-%d %H:%M')
+
+    print ("time to merge and remove date-time: %f" % (time() - t0))
+    t0 = time()
 
     df = df.sort(columns=['incidntnum', 'datetime']).reset_index(drop=True)
 
@@ -65,14 +75,9 @@ def main():
                  'datetime']
     df = df[relevant_param]
 
-    # add Coarse Category
-    # violence = ['SEX OFFENSES, FORCIBLE', 'SEX OFFENSES, NON FORCIBLE', 'ASSAULT', 'ROBBERY', 'WEAPON LAWS', 'SUICIDE',
-    #             'FAMILY OFFENSES']
-    # vandalism = ['SUSPICIOUS OCC', 'VANDALISM', 'TRESPASS']
-    # drugs = ['DRUG/NARCOTIC']
-    # alcohol = ['LIQUOR LAWS', 'DRUNKENNESS', 'DISORDERLY CONDUCT', 'LOITERING']
-    # prostitution = ['PROSTITUTION']
-    # dui = ['DRIVING UNDER THE INFLUENCE']
+    print ("time to remove unnecessary columns: %f" % (time() - t0))
+    t0 = time()
+
     crimes = {
             "violence": ['SEX OFFENSES, FORCIBLE', 'SEX OFFENSES, NON FORCIBLE', 'ASSAULT', 'ROBBERY', 'WEAPON LAWS', 'SUICIDE',
                          'FAMILY OFFENSES'],
@@ -82,33 +87,13 @@ def main():
              "prostitution": ['PROSTITUTION'],
              "dui": ['DRIVING UNDER THE INFLUENCE']}
 
+    df['CoarseCategory'] = None
     for crime in crimes:
         for crime_type in crimes[crime]:
             df.CoarseCategory[df.category == crime_type] = crime
 
-    # for i in violence:
-    #     df.CoarseCategory[df.category == i] = 'violence'
-    #
-    # df['CoarseCategroy'] = None
-    # for i in df.index:
-    #     if df.category[i] in violence:
-    #         df['CoarseCategroy'][i] = 'violence'
-    #     if df.category[i] in vandalism:
-    #         df['CoarseCategroy'][i] = 'vandalism'
-    #     if df.category[i] in drugs:
-    #         df['CoarseCategroy'][i] = 'drugs'
-    #     if df.category[i] in alcohol:
-    #         df['CoarseCategroy'][i] = 'alcohol'
-    #     if df.category[i] in prostitution:
-    #         df['CoarseCategroy'][i] = 'prostitution'
-    #     if df.category[i] in dui:
-    #         df['CoarseCategroy'][i] = 'dui'
-
-    # add Coarse descriptor Kris code....
-
-
-
-
+    print ("time to create coarse categories: %f" % (time() - t0))
+    t0 = time()
 
     # Call Nick's function with RPy2
     isn2004 = pyproj.Proj(
@@ -121,7 +106,10 @@ def main():
     df["newx"] = tmp[0]
     df["newy"] = tmp[1]
 
-    df.to_csv("final_data.csv", index=False)
+    print ("time to create project long and lat to new coordinates: %f" % (time() - t0))
+    t0 = time()
+    df.to_csv("final_data.csv", index=False, encoding='utf-8')
+    print ("time to write to csv: %f" % (time() - t0))
 
 
 if __name__ == '__main__':
