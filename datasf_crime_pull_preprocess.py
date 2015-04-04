@@ -22,7 +22,7 @@ def main():
         sys.stderr.write(e.message)
         pass
     # read result of wget pull
-    with open("out.json") as f:
+    with open("rows.json?accessType=DOWNLOAD.1") as f:
         data = f.read()
 
     data = json.loads(data)
